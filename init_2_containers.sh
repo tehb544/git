@@ -5,9 +5,11 @@ echo ">>================================"
 echo "==================>>=============="
 echo "================================>>"
 
-
-docker stop $(docker ps)
-docker rm $(docker ps -a)
+echo "now stopping all containers, like:"
+docker stop $(docker ps -q)
+echo "now removing all containers, like:"
+docker rm $(docker ps -aq)
+echo "now getting started"
 docker pull tehb544/test1
 docker run -t -d --name $1 --expose $2 -p $2:$2  tehb544/test1
 docker exec $1  service ssh start
