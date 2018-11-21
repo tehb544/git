@@ -1,7 +1,3 @@
-12 10 73 57
-
-
-
 
 apt-get update
 
@@ -23,7 +19,7 @@ EOF
 # apt-get install -y kubelet kubeadm kubectl 
 
 nano /etc/systemd/system/kubelet.service.d/10-kubeadm.conf # to make
-Environment=”cgroup-driver=systemd/cgroup-driver=cgroupfs”
+Environment=ï¿½cgroup-driver=systemd/cgroup-driver=cgroupfsï¿½
 
 kubeadm reset
 sudo systemctl restart docker && sudo systemctl restart kubelet
