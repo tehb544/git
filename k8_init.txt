@@ -1,0 +1,47 @@
+12 10 73 57
+
+
+
+
+apt-get update
+
+swapoff -a
+nano /etc/fstab #comment swap partition
+# nano /etc/hostname  # set hostname
+# nano /etc/hosts # add a static ip to hostname
+
+apt-get install -y docker.io
+
+apt-get update && apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+deb http://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+# apt-get update
+
+
+# apt-get install -y kubelet kubeadm kubectl 
+
+nano /etc/systemd/system/kubelet.service.d/10-kubeadm.conf # to make
+Environment=”cgroup-driver=systemd/cgroup-driver=cgroupfs”
+
+kubeadm reset
+sudo systemctl restart docker && sudo systemctl restart kubelet
+
+kubeadm init --apiserver-advertise-address=192.168.56.21 --pod-network-cidr=192.168.0.0/16
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+kubectl apply -f https://docs.projectcalico.org/v3.0/getting-started/kubernetes/installation/hosted/kubeadm/1.7/calico.yaml 
+kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+
+
+
+kubectl get pods -o wide --all-namespaces
+
+
+kubectl proxy --address="192.168.56.130" --port=9090 --accept-hosts '.*'
+
+
