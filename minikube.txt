@@ -47,7 +47,7 @@ sudo minikube start --vm-driver=none
 ############# 
 sudo kubectl get pods -o wide --all-namespaces
 
-############# status is a big deal ! =)
+############# status is a big deal !!!      =)
 sudo minikube status
 
 
@@ -59,7 +59,7 @@ sudo kubectl proxy --address="192.168.221.128" --port=9090 --accept-hosts '.*'
 ###=================== other data ============================================================
 https://kubernetes.io/docs/setup/minikube/#quickstart
  
-# �� ������
+# старт на докере, контейнерная сеть 
 sudo minikube start \
     --network-plugin=cni \
     --container-runtime=containerd \
