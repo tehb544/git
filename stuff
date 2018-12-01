@@ -1,0 +1,228 @@
+kubectl proxy --address="10.0.75.1"  --accept-hosts '.*'
+
+10.0.75.1:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/#!/namespace?namespace=default
+
+
+=====================  my beacons job ===================================
+
+#=========================			new test system building
+
+sudo apt update
+sudo nano /etc/apt/sources.list
+sudo apt update
+sudo apt upgrade
+sudo minikube status
+sudo minikube update-context
+sudo minikube status
+sudo kubectl get pods -o wide --all-namespaces
+
+
+#========================= installing Java 8 to make local builds with gradle
+
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
+sudo apt-get install oracle-java8-set-default
+
+#\\\\
+java -version
+
+#java version "1.8.0_171"
+#Java(TM) SE Runtime Environment (build 1.8.0_171-b11)
+#Java HotSpot(TM) 64-Bit Server VM (build 25.171-b11, mixed mode)
+#\\\\
+
+#### enabling PATH for Java
+cat >> /etc/environment <<EOL
+JAVA_HOME=/usr/lib/jvm/java-8-oracle
+JRE_HOME=/usr/lib/jvm/java-8-oracle/jre
+EOL
+
+
+#=========================			git problems
+
+
+
+#========================= switch to dev branch of the project
+git checkout -b dev
+
+
+#========================= to build a jar for a custom folder of a project: 
+
+cd beacons-cloud-building-service
+
+../gradlew build -x test 
+
+# then if all done right there will be a folder "build" and a folder "libs" in it, and a jar file in there
+#beacons-cloud-building-service-2.1.da46a3e.jar
+
+
+#========================= build a docker container
+
+
+#dockerfile for beacons-cloud-config-service
+
+FROM openjdk:8-jre-slim
+
+MAINTAINER EPM-LSTR-BCN
+
+RUN mkdir -p /usr/beacon/logs/
+
+COPY dist/beacons-cloud-config-service.jar /usr/beacon/
+
+WORKDIR /usr/beacon/
+
+EXPOSE 10100
+
+CMD java -Dspring.profiles.active=DEV  -DlogsPath=/usr/beacon/logs  -DlogFileName=cloud-config-service.log -jar /usr/beacon/beacons-cloud-config-service.jar
+
+
+
+#========================= to build a dockerfile you want you ned to specify name(beacon-cloud-config-service.Dockerfile) and a dir with dockerfile and name(tag), like this
+
+
+sudo docker build -f beacon-cloud-config-service.Dockerfile . -t cont_name
+
+
+sudo docker run  -p 10100:10100 -d cont_name
+
+====================  minikube install  ===================================
+ 
+
+sudo apt update
+  
+sudo apt upgrade
+
+############# installing ssh&curl
+
+sudo apt install openssh-server
+sudo systemctl enable sshd 
+sudo apt install curl
+
+
+############# instaling docker
+  
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    software-properties-common
+
+
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+
+sudo apt-get update
+
+sudo apt-get install docker-ce
+
+ 
+############# installing minikube from binary
+
+curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.20.0/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+
+############# need to use exactly this version of kubectl, to avoid a bug with no pod info   
+
+sudo curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.8.7/bin/linux/amd64/kubectl
+sudo chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+
+
+############# starting minikube with no VMdriver (local container engine = docker)
+sudo minikube start --vm-driver=none
+
+############# 
+sudo kubectl get pods -o wide --all-namespaces
+
+############# status is a big deal ! =)
+sudo minikube status
+
+
+############# to start a local proxy 
+sudo kubectl proxy --address="192.168.221.128" --port=9090 --accept-hosts '.*'
+
+####    and go to this link to access the dashboard
+####   http://192.168.221.128:9090/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/#!/namespace?namespace=default
+
+
+###=================== other data ============================================================
+https://kubernetes.io/docs/setup/minikube/#quickstart
+ 
+# на докере
+sudo minikube start \
+    --network-plugin=cni \
+    --container-runtime=containerd \
+    --bootstrapper=kubeadm
+
+
+
+
+=====================================================
+kubernetes
+=====================================================
+
+apt-get update
+
+swapoff -a
+nano /etc/fstab #comment swap partition
+# nano /etc/hostname  # set hostname
+# nano /etc/hosts # add a static ip to hostname
+
+apt-get install -y docker.io
+
+apt-get update && apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+deb http://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+# apt-get update
+
+
+# apt-get install -y kubelet kubeadm kubectl 
+
+nano /etc/systemd/system/kubelet.service.d/10-kubeadm.conf # to make
+Environment=”cgroup-driver=systemd/cgroup-driver=cgroupfs”
+
+
+kubeadm init --apiserver-advertise-address=192.168.56.130 --pod-network-cidr=192.168.0.0/16
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+kubectl get pods --all-namespaces
+kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+
+kubectl get pods -o wide --all-namespaces
+
+kubectl logs coredns-576cbf47c7-h7c5x -n kube-system
+
+kubectl proxy --address="192.168.56.130" --port=9090 --accept-hosts '.*'
+
+
+
+http://192.168.56.21:9090/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login
+
+dashboard-admin.yaml
+###
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-dashboard
+  labels:
+    k8s-app: kubernetes-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: kubernetes-dashboard
+  namespace: kube-system
+###
+
+
